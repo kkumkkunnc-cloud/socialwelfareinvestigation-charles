@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사회복지실천론 기출 퀴즈</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            background-color: #f4f7f6;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background-color: #fff;
+        }
+        .option-btn:hover:not(:disabled) {
+            background-color: #f8fafc;
+            border-color: #94a3b8;
+        }
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .option-btn.correct {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+            font-weight: 600;
+        }
+        .option-btn.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+            font-weight: 600;
+        }
+        #explanation {
+            background-color: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        #explanation-title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        #next-btn {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        #next-btn:hover {
+            background-color: #2563eb;
+        }
+        #loading-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* height: 300px; */ /* <-- 불필요한 여백을 만드는 원인이 되어 제거했습니다. */
+            font-size: 1.2rem;
+            color: #475569;
+        }
+    </style>
+</head>
+<body class="flex justify-center min-h-screen p-4"> <!-- items-center를 제거하여 상단 정렬로 변경 -->
+
+    <div class="quiz-container w-full max-w-3xl mx-auto p-6 md:p-8">
+        <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">
+            사회복지실천론 기출 퀴즈
+        </h1>
+        
+        <div id="quiz-header" class="flex justify-between items-center mb-6 text-gray-600">
+            <div class="text-sm font-medium hidden">
+                <span id="year-badge" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full"></span>
+            </div>
+            <div class="text-lg font-semibold">
+                <span id="q-num">1</span> / <span id="q-total">0</span>
+            </div>
+            <div class="text-lg font-semibold">
+                점수: <span id="score" class="text-blue-600">0</span>
+            </div>
+        </div>
+
+        <div id="quiz-body">
+            <!-- 로딩 또는 퀴즈 시작 화면 -->
+            <div id="loading-screen">
+                <p></p>
+            </div>
+
+            <!-- 퀴즈 문제 영역 -->
+            <div id="quiz-content" class="hidden">
+                <div id="question-text" class="text-xl font-semibold text-gray-900 mb-6 min-h-[60px]">
+                    <!-- 문제가 여기에 로드됩니다. -->
+                </div>
+                
+                <div id="options-container">
+                    <!-- 선택지가 여기에 로드됩니다. -->
+                </div>
+
+                <div id="feedback-container" class="hidden">
+                    <div id="explanation">
+                        <h3 id="explanation-title">강의 스크립트 기반 해설</h3>
+                        <p id="explanation-text"></p>
+                    </div>
+                </div>
+
+                <div class="mt-8 text-right">
+                    <button id="next-btn" class="hidden">다음 문제</button>
+                </div>
+            </div>
+
+            <!-- 퀴즈 결과 영역 -->
+            <div id="results-screen" class="hidden text-center p-8">
+                <h2 class="text-2xl font-bold mb-4">퀴즈 완료!</h2>
+                <p class="text-xl text-gray-700">
+                    총 <span id="final-total">0</span>문제 중 <strong id="final-correct" class="text-blue-600">0</strong>문제를 맞히셨습니다.
+                </p>
+                <p class="text-2xl font-semibold mt-2">
+                    최종 점수: <strong id="final-score" class="text-blue-600">0</strong>점
+                </p>
+                <button onclick="location.reload()" class="mt-8 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                    다시 풀기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 데이터베이스 ---
+        // 제공된 PDF(2015-2019)와 스크립트를 기반으로 데이터 추출 및 해설 작성
+        const allQuestions = [
+            // --- 2016년도 ---
+            {
+                year: 2016,
+                question: "사회복지실천 현장을 1차 현장과 2차 현장으로 분류하는 기준으로 옳은 것은?",
+                options: [
+                    { text: "설립주체와 재원의 조달방식", isCorrect: false },
+                    { text: "서비스 제공방식", isCorrect: false },
+                    { text: "주거시설의 제공 여부", isCorrect: false },
+                    { text: "기관의 기능 및 목적", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 5강(05:38)에 따르면, 기관의 주된 '기능 및 목적'이 사회복지 서비스 제공인지 여부에 따라 1차 현장(예: 사회복지관)과 2차 현장(예: 병원, 학교)으로 분류합니다."
+            },
+            {
+                year: 2016,
+                question: "캐머만의 사회복지실천 현장을 이해하는 7가지 기준에 포함되지 않는 것은?",
+                options: [
+                    { text: "개입의 초점", isCorrect: false },
+                    { text: "관련법규와 정책", isCorrect: false },
+                    { text: "기관의 역사", isCorrect: true },
+                    { text: "개입방법과 실무자의 유형", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 5강(12:04)에서 제시된 7가지 기준은 ①개입의 초점, ②대응방식의 역사성, ③관련 법규와 정책, ④전달체계와 프로그램, ⑤개입방법과 실무자의 유형, ⑥연구/평가/성과, ⑦쟁점/동향/강점입니다. '기관의 역사'는 포함되지 않습니다."
+            },
+            {
+                year: 2016,
+                question: "사회복지실천 분야 중 가족복지에 대한 설명으로 옳은 것은?",
+                options: [
+                    { text: "여성가족부 소관이다.", isCorrect: true },
+                    { text: "일반 여성을 위한 사업을 중심으로 운영된다.", isCorrect: false },
+                    { text: "장애인과 그 주변 환경의 재활과 사회복귀를 원조한다.", isCorrect: false },
+                    { text: "정신보건과 알코올 및 약물 남용 영역으로 나눌 수 있다.", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 5강(43:54)에 따르면, 가족복지 관련 법률(예: 한부모가족지원법, 다문화가족지원법)은 주로 '여성가족부' 소관입니다."
+            },
+            {
+                year: 2016,
+                question: "<보기>는 업무 특성에 따른 사회복지사의 역할에 대한 설명이다. (가), (나)에 들어갈 용어를 차례로 올바르게 짝지은 것은? <보기> 사회복지사는 체계 유지 및 강화 역할을 한다. 우선 (가)로서 서비스 전달에 부정적 영향을 미치는 기관의 구조, 정책, 절차들을 분석해 지적하는 역할을 수행한다. 또한 사회복지사는 (나) 로서 클라이언트에 대한 지식·기술·태도를 발전시키기 위해 다른 전문가들과 함께 서로 돕는 역할을 수행한다.",
+                options: [
+                    { text: "프로그램 개발자, 자문가", isCorrect: false },
+                    { text: "조직분석가, 자문가", isCorrect: true },
+                    { text: "상담가, 프로그램 개발자", isCorrect: false },
+                    { text: "자문가, 상담가", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 6강(23:12)에 따르면, (가) '조직분석가'는 서비스에 부정적 영향을 미치는 '기관의 구조, 정책, 절차들을 분석'하는 역할입니다. 6강(25:05)에 따르면, (나) '자문가(consultant)'는 '다른 전문가들과 함께' 클라이언트에 대한 지식과 기술을 발전시키도록 돕는 역할입니다."
+            },
+            {
+                year: 2016,
+                question: "사회복지사의 역할을 개입 수준에 따라 분류할 때 미시적 차원의 역할에 해당하지 않는 것은?",
+                options: [
+                    { text: "행동가의 역할", isCorrect: true },
+                    { text: "조력자의 역할", isCorrect: false },
+                    { text: "옹호자의 역할", isCorrect: false },
+                    { text: "교사의 역할", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 6강(26:57)에 따르면, '행동가(현장개입가)'의 역할은 거시적 수준(macro-level)에 속합니다. 조력자, 옹호자, 교사 등은 미시적 수준(micro-level)의 역할입니다."
+            },
+            {
+                year: 2016,
+                question: "다양한 사회복지실천 현장에서 사회복지사의 역할이 잘못 연결된 것은?",
+                options: [
+                    { text: "교정사회복지 - 클라이언트가 저지른 비행 행위에 대한 원인을 밝히고 문제의 요인을 제거", isCorrect: false },
+                    { text: "의료사회복지 - 노년기를 안정적으로 꾸릴 수 있도록 조력", isCorrect: true },
+                    { text: "학교사회복지 - 어려움에 처한 학생을 조기에 발견하고 문제해결을 도움", isCorrect: false },
+                    { text: "장애인복지 - 장애인 또는 그 주변 환경과 직접 대면하며 서비스를 제공", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 5강(37:12)에 따르면, '의료사회복지'는 환자의 질병 치료, 회복, 사회복귀 기능 등을 지원하는 역할입니다. '노년기를 안정적으로 꾸릴 수 있도록 조력'하는 것은 주로 '노인복지' 분야의 역할입니다(5강 33:49)."
+            },
+            {
+                year: 2016,
+                question: "사회복지실천의 통합적 접근에 대한 설명으로 가장 적합한 것은?",
+                options: [
+                    { text: "개인적 병리나 과거 경험 진단을 통해 문제를 해석", isCorrect: false },
+                    { text: "사회복지실천 과정을 단편적 문제해결 과정으로 인식", isCorrect: false },
+                    { text: "문제에 대해 광범위하고 포괄적으로 접근", isCorrect: true },
+                    { text: "프로이트의 정신분석학을 적용", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(08:52)에서 통합적 접근은 전통적 접근과 달리 '문제에 대해 광범위하고 포괄적으로 접근'하며, 개인, 가족, 지역사회 등 다양한 수준의 체계에 개입합니다."
+            },
+            {
+                year: 2016,
+                question: "가족체계의 구성개념 중 <보기>의 설명에 해당하는 것은? <보기> ·가족 내 한 성원의 변화는 다른 성원을 반응하게 하는 자극이 되고 이 자극은 다른 가족에게 영향을 미치게 되어 전체에 영향을 주게 됨. ·'왜'보다는 '무엇을 하느냐'에 초점을 두어야 함.",
+                options: [
+                    { text: "환류고리", isCorrect: false },
+                    { text: "순환적 인과성", isCorrect: true },
+                    { text: "가족항상성", isCorrect: false },
+                    { text: "하위체계", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(21:17)에서 '순환적 인과성'은 가족 내 한 성원의 변화가 다른 성원에게 영향을 미치고, 그 영향이 다시 처음 성원에게 순환적으로 영향을 미치는 현상을 설명합니다."
+            },
+            {
+                year: 2016,
+                question: "치료집단의 유형 중 퇴직준비집단, 잠재력 개발집단 등 자기인식 증진과 사고의 변화를 목적으로 하는 집단은?",
+                options: [
+                    { text: "지지집단", isCorrect: false },
+                    { text: "교육집단", isCorrect: false },
+                    { text: "성장집단", isCorrect: true },
+                    { text: "사회화집단", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(30:38)에 따르면, '성장집단'은 구성원의 잠재력 개발, 자기인식 증진, 사고방식 변화 등을 목적으로 합니다."
+            },
+            {
+                year: 2016,
+                question: "<보기>에서 설명하는 통합적 사회복지실천 모델은? <보기> ·통합적 사회복지실천의 대표적인 모델로서 사회체계, 사회학습 등의 접근법을 준거틀로 삼은 모델 ·사회학습에 관한 사회복지사의 기능과 역할에 많은 비중 ·종합적인 과정 모델을 다양한 표적 체계인 개인, 가족, 집단, 지역사회 등에서 구체화된 단계와 연결하여 설명",
+                options: [
+                    { text: "단일화 모델", isCorrect: true },
+                    { text: "임파워먼트 모델", isCorrect: false },
+                    { text: "문제해결 모델", isCorrect: false },
+                    { text: "4체계 모델", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(41:31)에서 골드스틴(Goldstein)의 '단일화 모델'은 사회체계이론, 사회학습이론 등을 준거틀로 삼아 다양한 표적 체계에 접근하는 통합적 모델이라고 설명합니다."
+            },
+            {
+                year: 2016,
+                question: "사회복지실천에서 전문적 관계의 특성으로 옳지 않은 것은?",
+                options: [
+                    { text: "시간적 개방성", isCorrect: true },
+                    { text: "의도적인 목적성", isCorrect: false },
+                    { text: "권위성", isCorrect: false },
+                    { text: "통제성", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(13:08)에서 전문적 관계의 특성으로 '시간의 제한성(time-limited)'을 설명합니다. '시간적 개방성'은 전문적 관계의 특성이 아닙니다."
+            },
+            {
+                year: 2016,
+                question: "클라이언트와의 전문적 관계 형성을 위한 기술과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "적절한 권위 및 권한", isCorrect: false },
+                    { text: "자아노출의 기술", isCorrect: false },
+                    { text: "비판적인 태도", isCorrect: true },
+                    { text: "도우려는 열망", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(17:48)에서 제시된 12가지 기술 중 '비판적인 태도'는 없습니다. 오히려 8강(21:36)의 '수용과 기대' 및 8강(37:20)의 '비심판적 태도' 원칙과 같이 비판적이지 않은 태도를 강조합니다."
+            },
+            {
+                year: 2016,
+                question: "<보기>에서 설명하는 사회복지실천 관계형성의 원리는? <보기> ·클라이언트의 특수성을 인정하고 이해하며, 클라이언트를 원조하는 원리와 방법을 다르게 활용하는 것 ·인간에 대한 편견이나 선입관 극복",
+                options: [
+                    { text: "의도적 감정표현", isCorrect: false },
+                    { text: "개별화", isCorrect: true },
+                    { text: "수용", isCorrect: false },
+                    { text: "비심판적인 태도", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(31:29)에서 비에스텍의 첫 번째 원리인 '개별화(individualization)'는 클라이언트의 '고유한 특수성을 인정하고 이해'하며, 이에 맞춰 원조 방법 또한 다르게 활용하는 것을 의미합니다(8강 32:32)."
+            },
+            {
+                year: 2016,
+                question: "사회복지실천에서 전문적인 관계를 형성하는 데 장애가 되는 요인 중 <보기>에서 설명하는 것은? <보기> 사회복지사가 클라이언트를 마치 자신의 과거의 어떤 인물이나 그와의 관계인 것처럼 느끼고 무의적으로 그 관계와 같이 반응하는 것",
+                options: [
+                    { text: "전이", isCorrect: false },
+                    { text: "역전이", isCorrect: true },
+                    { text: "클라이언트의 불신", isCorrect: false },
+                    { text: "클라이언트의 비자발성", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(46:00)에서 '역전이(counter-transference)'는 '사회복지사가' 클라이언트를 자신의 '과거 중요 인물'처럼 느끼고 '무의식적으로 반응'하는 현상이라고 설명합니다."
+            },
+            {
+                year: 2016,
+                question: "가장 기본적인 면접기술로서 클라이언트가 말하고 행동하는 것에 주의를 기울이는 것은?",
+                options: [
+                    { text: "관찰", isCorrect: true },
+                    { text: "경청", isCorrect: false },
+                    { text: "침묵", isCorrect: false },
+                    { text: "질문", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 9강(15:34)에서 '관찰'은 편견을 버리고 '실제 상황을 있는 그대로 보는 것'이며, '언어'뿐만 아니라 '비언어적 표현', '행동' 등 모든 측면을 주의 깊게 보는 것이라고 설명합니다."
+            },
+            {
+                year: 2016,
+                question: "면접의 기록 유형 중, 사회복지실천에서 가장 오랜 역사를 가지고 있는 기록법으로 면접과정 중에 일어나는 모든 일을 꼼꼼히 있는 그대로 기록하는 방법은?",
+                options: [
+                    { text: "최소기본 기록", isCorrect: false },
+                    { text: "문제중심 기록", isCorrect: false },
+                    { text: "이야기체 기록", isCorrect: false },
+                    { text: "과정 기록", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 9강(39:20)에서 '과정기록'은 '가장 오랜 역사를 가진 기록법'이며, 면접 중 일어난 일을 '있는 그대로 꼼꼼히 기록'하는 방법이라고 설명합니다. 주로 교육용으로 많이 쓰입니다."
+            },
+            {
+                year: 2016,
+                question: "면접의 단계별 목적을 바르게 짝지은 것은? <보기> (가)초기 면접과정 (나)조사 및 사정단계 (다)개입/실행단계 a.신뢰관계 형성 b.문제해결과 억눌린 감정의 환기를 통한 치료 효과 c.클라이언트에 대해 더 많은 유용한 정보 획득",
+                options: [
+                    { text: "(가)-b, (나)-c, (다)-a", isCorrect: false },
+                    { text: "(가)-a, (나)-b, (다)-c", isCorrect: false },
+                    { text: "(가)-a, (나)-c, (다)-b", isCorrect: true },
+                    { text: "(가)-c, (나)-a, (다)-b", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 9강(05:58)에 따르면, (가)초기 단계의 목적은 '신뢰관계 형성(a)'입니다. (나)조사 및 사정(중간) 단계의 목적은 '유용한 정보 획득(c)'입니다. (다)개입/실행 단계의 목적은 '문제해결(b)' 및 변화 촉진입니다."
+            },
+            {
+                year: 2016,
+                question: "체계적 사회복지실천 과정 중, 클라이언트 개인, 가족, 환경에 대한 기본적인 정보를 수집하는 최초의 단계에 해당하는 것은?",
+                options: [
+                    { text: "접수", isCorrect: true },
+                    { text: "자료수집", isCorrect: false },
+                    { text: "사정", isCorrect: false },
+                    { text: "평가", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 10강(01:53)에서 사회복지실천의 '첫 번째 단계'를 '접수(Intake)'라고 설명합니다. 이 단계에서 클라이언트와 처음 만나 정보를 수집하는 초기 상담이 이루어집니다."
+            },
+            {
+                year: 2016,
+                question: "자료수집에서 클라이언트의 진술을 통해 얻을 수 있는 정보와 가장 거리가 먼 것은?",
+                options: [
+                    { text: "감정", isCorrect: false },
+                    { text: "문제해결을 위해 가지고 있는 자원", isCorrect: false },
+                    { text: "지금까지의 문제해결 노력", isCorrect: false },
+                    { text: "심리검사 결과", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 10강(29:55)에서 '심리검사 결과'는 클라이언트의 진술이 아닌 '객관적 자료'의 출처로 분류됩니다. 감정, 자원, 문제해결 노력 등은 클라이언트 자신의 진술을 통해 얻을 수 있습니다."
+            },
+            {
+                year: 2016,
+                question: "사회복지실천에서 접수담당자에게 요구되는 자질과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "필요한 서비스나 프로그램을 파악할 수 있는 전문성", isCorrect: false },
+                    { text: "성공적인 라포(rapport) 형성의 기술", isCorrect: false },
+                    { text: "기관의 정책을 결정할 수 있는 권한", isCorrect: true },
+                    { text: "지역사회자원에 대한 폭넓은 정보", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 10강(12:21)에서 접수 단계의 과업은 문제 확인, 관계 수립, 정보 제공, 의뢰 등입니다. 접수담당자가 기관의 '정책을 결정할 수 있는 권한'까지 가질 필요는 없습니다."
+            },
+            {
+                year: 2016,
+                question: "진단과 구별되는 문제 사정의 특징으로 옳지 않은 것은?",
+                options: [
+                    { text: "내적인 심리적 측면을 주로 고려한다.", isCorrect: true },
+                    { text: "클라이언트의 참여를 무엇보다 중요시한다.", isCorrect: false },
+                    { text: "클라이언트의 강점이 강조된다.", isCorrect: false },
+                    { text: "변화의 대상이 환경적·제도적 영역으로까지 확대된다.", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 11강(03:07)에 따르면, '내적인 심리적 측면을 주로 고려'하는 것은 '진단(Diagnosis)'의 특징입니다. '사정(Assessment)'은 이와 달리 외부 환경적 측면을 포괄적으로 고려합니다."
+            },
+            {
+                year: 2016,
+                question: "사정기술 중 클라이언트의 삶에 영향을 미치는 조직이나 요인을 원을 사용하여 나타냄으로써 그들의 사회적 맥락을 표현하는 실천기법은?",
+                options: [
+                    { text: "생태도", isCorrect: true },
+                    { text: "가계도", isCorrect: false },
+                    { text: "표준화된 심리검사", isCorrect: false },
+                    { text: "생활력 조사", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 11강(21:43)에서 '생태도'는 '클라이언트의 삶에 영향을 미치는 조직이나 요인을 원을 사용하여' 클라이언트와의 관계, 자원 등을 표현하는 기법이라고 설명합니다."
+            },
+            {
+                year: 2016,
+                question: "사회복지실천 개입을 위한 목표설정 요령인 SMART에 해당하지 않은 것은?",
+                options: [
+                    { text: "측정가능성(measurable)", isCorrect: false },
+                    { text: "시의적절성(timely)", isCorrect: false },
+                    { text: "관계적합성(relativity)", isCorrect: true },
+                    { text: "성취가능성(achievable)", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 11강(29:27)에서 SMART는 Specific(구체성), Measurable(측정가능성), Achievable(성취가능성), Realistic(현실성), Timely(시의적절성)를 의미합니다. '관계적합성(Relativity)'은 이에 해당하지 않습니다."
+            },
+            {
+                year: 2016,
+                question: "사회복지의 개입에서 구체적으로 어떤 활동을 해야 할 지를 결정할 때 반드시 고려해야 할 기본 원칙에 해당하지 않는 것은?",
+                options: [
+                    { text: "경제성", isCorrect: false },
+                    { text: "개별화", isCorrect: false },
+                    { text: "발달", isCorrect: false },
+                    { text: "상호독립성", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 12강(07:42)에서 '상호 보완성'과 파트너십을 강조합니다. 클라이언트와 사회복지사는 '상호독립적'인 관계가 아니라 상호 협력하고 보완하는 관계입니다."
+            },
+            {
+                year: 2016,
+                question: "제도적 사회복지실천의 초점과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "사회적·정치적·경제적 제도들에 대해 비판", isCorrect: false },
+                    { text: "경제 불평등, 억압, 차별에 관한 인식", isCorrect: false },
+                    { text: "사회복지 전문직과 체계의 사회통제 기능들에 대한 분석", isCorrect: false },
+                    { text: "개인적이고 표출된 저항 양식에 대한 이해", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 12강(11:38)에 따르면, 제도적 실천은 사회/경제 구조, 불평등, 억압 등 '거시적/구조적' 요인에 초점을 둡니다. '개인적... 저항 양식'에 대한 이해는 전통적/미시적 실천에 더 가깝습니다."
+            },
+            {
+                year: 2016,
+                question: "클라이언트의 변화를 위한 직접적 개입의 기술들 중 그 유형의 범주가 나머지와 다른 것은?",
+                options: [
+                    { text: "격려", isCorrect: false },
+                    { text: "환기법", isCorrect: false },
+                    { text: "모델링", isCorrect: true },
+                    { text: "일반화", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 12강(25:39)에서 '모델링'은 '행동변화기술'로 분류됩니다. 반면 '격려', '환기법', '일반화' 등은 12강(23:48)에서 설명하는 '의사소통기술'에 속합니다."
+            },
+            {
+                year: 2016,
+                question: "사회복지실천에 적용되는 평가설계 방법 중 개인의 변화목표에 대한 변화상태를 계량화하는 방법은?",
+                options: [
+                    { text: "단일사례설계", isCorrect: false },
+                    { text: "목표달성척도", isCorrect: true },
+                    { text: "과제성취척도", isCorrect: false },
+                    { text: "클라이언트 만족도 설문", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 13강(12:23)에서 '목표달성척도(Goal Achievement Scale)'는 '개인의 변화목표에 대한 변화상태를 계량화'하고, 개별화된 척도를 설정하여 목표 성취 수준을 측정하는 방법이라고 설명합니다."
+            },
+            {
+                year: 2016,
+                question: "다음 중 사회복지실천에서 가장 만족스러운 종결유형은?",
+                options: [
+                    { text: "중단으로 인한 종결", isCorrect: false },
+                    { text: "목적달성에 의한 종결", isCorrect: true },
+                    { text: "시간제한이 없는 종결", isCorrect: false },
+                    { text: "시간제한에 의한 종결", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 13강(24:53)에서 '목적달성에 의한 종결'을 '가장 바람직하고 만족스러운 유형'으로 설명합니다."
+            },
+            {
+                year: 2016,
+                question: "사후관리에 대한 설명으로 가장 거리가 먼 것은?",
+                options: [
+                    { text: "긍정적인 성과가 유지되는지를 확인하는 것이다.", isCorrect: false },
+                    { text: "사후관리 방법은 접수단계부터 결정하는 것이 바람직하다.", isCorrect: true },
+                    { text: "사후관리로 얻어진 정보로 재개입, 타기관 의뢰 등을 판단한다.", isCorrect: false },
+                    { text: "필요시 사회복지실천 과정의 초기 단계로 돌아갈 수 있다.", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 13강(26:54)에 따르면, 사후관리는 '종결 이후(after the end)'에 긍정적 변화가 잘 유지되는지 모니터링하는 과정입니다. '접수단계'부터 결정하는 것은 아닙니다."
+            },
+            {
+                year: 2016,
+                question: "사례관리의 등장배경과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "서비스 전달의 지방분권화", isCorrect: false },
+                    { text: "비용의 확대", isCorrect: true },
+                    { text: "복합적 욕구를 지닌 인구의 증가", isCorrect: false },
+                    { text: "탈시설화", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 14강(11:08)에서 사례관리의 등장 배경으로 '비용 절감의 필요성(need for cost reduction)'과 '비용 효율성(cost efficiency)'을 설명합니다. '비용의 확대'는 등장 배경이 아닙니다."
+            },
+            {
+                year: 2016,
+                question: "클라이언트 입장에서의 사례관리 목적과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "서비스 제공의 연속성 보장", isCorrect: false },
+                    { text: "통합적이며 개별적인 서비스 이용", isCorrect: false },
+                    { text: "사회적 기능 향상과 역량강화", isCorrect: false },
+                    { text: "서비스의 전문화 및 복합화", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 14강(28:42)에서 '클라이언트 입장'의 목적은 서비스 연속성 보장, 통합적/개별적 서비스 이용, 사회적 기능 향상, 역량강화 등입니다. '서비스의 전문화'는 기관이나 지역사회 관점의 목적일 수 있습니다."
+            },
+            {
+                year: 2016,
+                question: "사례관리서비스를 제공기관에 따라 분류했을 때 <보기>에서 설명하는 모형은? <보기> 가족상담, 안내 외 의뢰서비스와 같은 직접서비스 제공 ·기관에서 직접서비스만 제공해야 하는 한계",
+                options: [
+                    { text: "독자기관 모형", isCorrect: true },
+                    { text: "직접서비스 모형", isCorrect: false },
+                    { text: "특수단위시설 모형", isCorrect: false },
+                    { text: "조합모형", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 14강(33:13)에서 사례관리 제공기관의 특성에 따른 분류를 언급합니다. 보기의 설명처럼 '독자적인 기관'이 직접 서비스를 제공하지만, 해당 '기관의 서비스로 한정되는 한계'를 갖는 모형은 '독자기관 모형'에 해당합니다."
+            },
+            {
+                year: 2016,
+                question: "<보기>는 일반적인 6단계 사례관리 과정이다. 빈 칸에 들어갈 말을 바르게 짝지은 것은? <보기> 접수 → (가) → (나) → (다) → 점검 및 재사정 → 종결 및 사후관리",
+                options: [
+                    { text: "(가)개입 및 조정, (나)사정, (다)결과평가", isCorrect: false },
+                    { text: "(가)결과평가, (나)계획, (다)개입 및 조정", isCorrect: false },
+                    { text: "(가)사정, (나)계획, (다)개입 및 조정", isCorrect: true },
+                    { text: "(가)사정, (나)개입 및 조정, (다)계획", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 15강(08:33)에서 제시하는 6단계 사례관리 과정은 [접근(접수)] → [사정] → [계획] → [실행(개입 및 조정)] → [점검/재사정(모니터링)] → [평가/종결(사후관리)] 입니다. 따라서 (가)사정, (나)계획, (다)개입 및 조정 순서가 맞습니다."
+            },
+            {
+                year: 2016,
+                question: "사례관리에서 사정의 목적과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "단순한 정보 수집과 문제의 인과관계 이해", isCorrect: true },
+                    { text: "클라이언트와 사례관리자에게 문제와 해결방안에 대한 이해 향상", isCorrect: false },
+                    { text: "이용자와 사례관리자 간 신뢰 및 협력관계 형성", isCorrect: false },
+                    { text: "이용자의 잠재력을 드러내고 지속될 수 있도록 지원", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 15강(14:27)에 따르면, 사정(Assessment)의 목적은 클라이언트와의 '상호 이해 증진', '신뢰 및 협력관계 형성', '잠재력(강점) 확인' 등입니다. '단순한 정보 수집'이나 인과관계 이해를 넘어선 포괄적인 과정입니다."
+            },
+            {
+                year: 2016,
+                question: "사례관리의 구체적인 계획수립 과정에서 목표설정과 이를 달성하기 위한 전략, 역할, 장소, 비용 등에 대해 사례관리자와 클라이언트가 동의하는 것을 의미하는 개념은?",
+                options: [
+                    { text: "우선순위 정하기", isCorrect: false },
+                    { text: "사정 내용에 대한 검토", isCorrect: false },
+                    { text: "계약", isCorrect: true },
+                    { text: "서비스의 조정", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 15강(19:37)에서 '계약'은 설정된 목표, 과업, 역할, 장소, 비용, 개입 방법 등에 대해 '사례관리자와 클라이언트가 상호 동의'하는 과정이라고 설명합니다."
+            },
+            // --- 2015년도 ---
+            {
+                year: 2015,
+                question: "'사회복지'의 주요특성에 대한 설명으로 가장 거리가 먼 것은?",
+                options: [
+                    { text: "사회구성원들의 삶의 질을 개선하고, 복잡한 사회관계에서 이해와 갈등을 조정한다.", isCorrect: false },
+                    { text: "모든 사회구성원이 아닌, 배제되거나 차별 받는 사람만을 대상으로 한다.", isCorrect: true },
+                    { text: "사회적 자산과 생산의 분배에 대한 정의실현을 추구한다.", isCorrect: false },
+                    { text: "한 개인의 노력이 아닌, 집합적이고 조직적인 활동과 노력이 필요하다.", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 1강(41:18)에서 사회복지실천의 목적은 '일부 사람이 아닌 모든 사회구성원(all people)'의 삶의 질을 향상시키는 것이라고 설명합니다."
+            },
+            {
+                year: 2015,
+                question: "로마니쉰(Romanyshyn)이 주장한 '사회복지 개념의 변화'에 대한 설명으로 옳지 않은 것은?",
+                options: [
+                    { text: "빈민에 대한 복지로부터 복지사회로의 이행", isCorrect: false },
+                    { text: "잔여적 관점에서 제도적 관점으로의 변화", isCorrect: false },
+                    { text: "보편성에서 특수성으로의 변화", isCorrect: true },
+                    { text: "최저 수준에서 적정 수준으로의 변화", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 1강(19:53)에서 로마니쉰은 사회복지 개념이 '특수성(speciality)에서 보편성(universalism)으로' 변화했다고 설명합니다. 그 반대가 아닙니다."
+            },
+            {
+                year: 2015,
+                question: "<보기> 중 '자선조직협회(COS)'에 대한 설명으로 옳은 것을 모두 고른 것은? <보기> (ㄱ) 기독교적 도덕성을 기초로 빈곤의 원인을 개인에게서 도출 (ㄴ) 개별사회복지와 가족복지의 형성과 발전에 큰 영향을 미침 (ㄷ) 빈곤과 같은 문제의 원인을 환경에서 찾음 (ㄹ) 빈민들을 이해하고 돕기 위해 그들의 생활환경에 직접 들어가서 활동",
+                options: [
+                    { text: "(ㄱ), (ㄴ)", isCorrect: true },
+                    { text: "(ㄱ), (ㄷ)", isCorrect: false },
+                    { text: "(ㄷ), (ㄹ)", isCorrect: false },
+                    { text: "(ㄴ), (ㄹ)", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 2강(12:05)에서 COS는 '기독교적 도덕성'을 강조하고 빈곤의 원인을 '개인의 잘못'으로 보았습니다(ㄱ). 또한 2강(11:11)에서 '개별복지(individual welfare)와 가족복지(family welfare)의 형성'에 큰 영향을 미쳤다고 설명합니다(ㄴ). (ㄷ)과 (ㄹ)은 인보관운동의 특징입니다."
+            },
+            {
+                year: 2015,
+                question: "<보기>에서 설명하는 서구사회의 사회복지실천 모델은? <보기> • 사회복지실천에서 사회적 약자들이 받는 억압이나 차별을 해소시키는 개입의 기본적인 준거틀로 발전 • 클라이언트의 문제보다는 해결점을 발견하고 강점을 강화시키는 데 초점",
+                options: [
+                    { text: "기능주의 모델", isCorrect: false },
+                    { text: "문제해결 모델", isCorrect: false },
+                    { text: "행동주의 모델", isCorrect: false },
+                    { text: "임파워먼트 모델", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 3강(45:45)에서 '임파워먼트 모델'은 '억압이나 차별을 해소'하고, 3강(36:53)의 '강점 관점'과 연결되어 '문제보다는 강점을 강화'하는 데 초점을 둡니다."
+            },
+            {
+                year: 2015,
+                question: "한국 사회복지실천의 발달과정에 대한 설명으로 옳지 않은 것은?",
+                options: [
+                    { text: "한국전쟁 전후로 외원사회사업기관과 한국외원단체협의회를 중심으로 한 개별사회사업실천 등이 시작되었다.", isCorrect: false },
+                    { text: "1970년 「사회복지사업법」이 제정되어 사회복지법인, 시설, 인력에 대한 틀을 마련하는 데 큰 영향을 주었다.", isCorrect: false },
+                    { text: "1970년 제정된 「사회복지사업법」에 따라 1급 사회복지사는 국가시험에 합격해야 자격을 부여하였다.", isCorrect: true },
+                    { text: "1990년대 이후, 대학에서의 사회복지실천 관련 교육과정은 더욱 다양화되고 세분화되었다.", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 1강(38:37)에 따르면, '1급 사회복지사 국가시험'은 1999년(1997년 법 개정)부터 시작되었습니다. 1970년 법 제정 당시에는 국가시험 제도가 없었습니다."
+            },
+            {
+                year: 2015,
+                question: "사회복지실천의 새로운 관점인 '강점 관점'에 대한 설명으로 옳지 않은 것은?",
+                options: [
+                    { text: "낙인적으로 진단하고 분류하는 것을 피하고, 클라이언트로 하여금 변화에 대한 희망과 확신을 갖게 하는 것이다.", isCorrect: false },
+                    { text: "모든 개인, 집단, 가족, 지역사회가 강점을 지녔다고 신뢰한다.", isCorrect: false },
+                    { text: "어려운 상황이 도전과 기회가 될 수 있다는 신념을 키워준다.", isCorrect: false },
+                    { text: "클라이언트에게 가장 좋은 서비스를 주기 위해 상하관계를 유지한다.", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 3강(41:45)에서 강점 관점의 관계는 '상하관계(orderly relationship)'가 아닌 '협력적 관계(cooperative relationship)'라고 설명합니다."
+            },
+            {
+                year: 2015,
+                question: "<보기>는 사회복지실천의 일반체계적 관점에서 체계활동과정에 관한 그림이다. 빈칸에 들어갈 용어를 순서대로 바르게 나열한 것은? <보기> (가) → [체계] → (다)  [피드백 화살표 (나)가 (다)에서 (가)로 향함]",
+                options: [
+                    { text: "가: 산출, 나: 투입, 다: 환류", isCorrect: false },
+                    { text: "가: 환류, 나: 투입, 다: 산출", isCorrect: false },
+                    { text: "가: 투입, 나: 환류, 다: 산출", isCorrect: true },
+                    { text: "가: 환류, 나: 산출, 다: 투입", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 3강(23:39)에서 체계활동과정은 '투입(input) -> 전환(transfer/체계) -> 산출(output) -> 환류(feedback)'로 설명됩니다. 그림에서 (가)는 '투입', (다)는 '산출', 그리고 (다)에서 (가)로 돌아가는 (나)는 '환류'입니다."
+            },
+            {
+                year: 2015,
+                question: "사회복지사의 윤리강령에 나타난 '개인적 차원'에서의 윤리기준에 대한 설명으로 가장 적합한 것은?",
+                options: [
+                    { text: "사회적 약자를 보호 대변하고 사회정의를 실천하기 위해 노력해야 한다.", isCorrect: false },
+                    { text: "기관의 사업목표 달성을 위해 노력해야 한다.", isCorrect: false },
+                    { text: "업무와 관련해서 정당하지 않은 방법으로 경제적 이득을 취하거나 꾀하지 않아야 한다.", isCorrect: true },
+                    { text: "클라이언트의 권익보호 및 추구를 최우선 가치로 삼아야 한다.", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 4강(24:51)에서 개인적 차원의 윤리기준으로 '업무와 관련하여 경제적 이득을 부정하게 취하지 않아야 한다'고 설명합니다. (1), (4)는 사회적 차원, (2)는 기관 차원의 윤리기준입니다."
+            },
+            {
+                year: 2015,
+                question: "로엔버그(Lowenberg), 돌고프(Dolgoff), 해링튼(Harrington)이 제시한 '윤리적 딜레마 해결을 위한 윤리원칙'에 대한 설명으로 옳지 않은 것은?",
+                options: [
+                    { text: "삶의 보호는 가장 중요한 원칙으로 클라이언트의 자기결정, 삶의 존엄성, 삶의 질과 같은 가치의 균형을 맞추어야 한다.", isCorrect: false },
+                    { text: "사회복지사는 클라이언트에게 최대한의 자율성을 보장하여야 한다.", isCorrect: false },
+                    { text: "사회복지사는 클라이언트 개인이 경험하는 해가 최소가 되도록 보장할 의무를 지닌다.", isCorrect: false },
+                    { text: "정직과 솔직함은 여러 원칙들 중 가장 높은 수준의 원칙이다.", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 4강(29:54)에서 제시된 7가지 원칙 중 최우선 원칙(가장 높은 수준)은 '생명보호(life protection)'입니다. '정직과 솔직함'은 7번째 원칙입니다(4강 30:55)."
+            },
+            {
+                year: 2015,
+                question: "<보기>에서 설명하는 사회복지의 전문적 실천분야는? <보기> •학생-학교 지역사회의 연계를 통해 학생의 심리사회적 문제를 예방·해결 •모든 학생이 자신의 잠재력과 능력을 최대한 발휘할 수 있도록 학생복지의 실현을 도와주는 교육기능의 한 부분",
+                options: [
+                    { text: "학교사회복지", isCorrect: true },
+                    { text: "정신보건사회복지", isCorrect: false },
+                    { text: "가족복지", isCorrect: false },
+                    { text: "노인복지", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 5강(29:57)에서 '학교사회복지'는 '학생-학교-지역사회의 연계'를 통해 학생의 '심리사회적 문제를 예방·해결'하고 학생복지를 실현하는 '교육기능의 한 부분'이라고 정의합니다."
+            },
+            {
+                year: 2015,
+                question: "지역사회복지의 일환으로 '주민들이 공유하고 있는 문제를 해결하기 위해 함께 투쟁하고 주민들의 삶에 영향을 주는 결정에 대해 스스로 발언할 수 있게 유도'하는 것은?",
+                options: [
+                    { text: "지역사회기반 사회복지서비스 활동", isCorrect: false },
+                    { text: "지역사회계획 활동", isCorrect: false },
+                    { text: "지역사회개발 활동", isCorrect: false },
+                    { text: "지역사회조직화 활동", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 7강(25:33)에서 '지역사회조직화(regional social organization)' 활동은 주민들이 '스스로 발언할 수 있게(speak out for themselves)' 힘을 갖도록(empowerment) 하는 실천이라고 설명합니다. 이는 7강(31:36)의 '사회행동'과도 연결됩니다."
+            },
+            {
+                year: 2015,
+                question: "미시적 사회복지실천의 관점에서 서비스 제공자로서 사회복지사의 역할에 대한 설명으로 가장 거리가 먼 것은?",
+                options: [
+                    { text: "클라이언트의 문제나 욕구를 파악해 적절한 보호와 서비스 제공계획을 세운다.", isCorrect: false },
+                    { text: "지역 내 잠재적인 지역사회의 자원 및 사회적인 관계망을 충분히 이해한다.", isCorrect: false },
+                    { text: "클라이언트뿐 아니라 다른 기관이나 단체들과 효과적으로 의사소통을 한다.", isCorrect: false },
+                    { text: "사회 전반적으로 한 사회의 개혁과 발전을 추구하고, 사회 정의를 실현하는데 앞장선다.", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 6강(06:01)에 따르면, '사회 전반의 개혁과 발전, 사회정의 실현'을 추구하는 것은 미시적(서비스 제공자) 관점이 아닌 '거시적(activist)' 관점의 역할입니다."
+            },
+            {
+                year: 2015,
+                question: "업무특성에 따른 사회복지사의 역할에 관한 설명에서 (가), (나)에 들어갈 단어를 바르게 나열한 것은? <보기> 사회복지사는 옹호나 조정가능성을 파악하는 일에서부터 기술적으로 지원을 하거나 서비스를 연계하고 수행하기 위해 직접 개입하는 일까지 다양한 방법으로 (가)의 역할을 수행한다. 또한 서비스 전달을 방해하는 요인들을 파악한 후 서비스 전달체계를 강화할 수 있는 방안을 모색하고 수행하는 (나)의 역할도 수행한다.",
+                options: [
+                    { text: "가: 조정자, 나: 중개자", isCorrect: true },
+                    { text: "가: 조직분석가, 나: 촉진자", isCorrect: false },
+                    { text: "가: 조정자, 나: 촉진자", isCorrect: false },
+                    { text: "가: 자문가, 나: 중개자", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 6강(20:22)에서 (가)'조정자(coordinator)'는 '기술적 지원'이나 '서비스 연계'를 위해 직접 개입하는 역할입니다. (나)'중개자(broker)'는 6강(19:31)에서 '클라이언트와 자원/서비스를 연결'하는 역할로, 보기의 설명(전달체계 강화)과는 다소 차이가 있으나, 가장 근접한 답안입니다. (질문과 스크립트 간의 용어 매칭이 다소 모호함)"
+            },
+            {
+                year: 2015,
+                question: "사회복지실천을 위한 통합적 접근의 구성요소에 대한 설명으로 옳지 않은 것은?",
+                options: [
+                    { text: "사회복지실천과정을 획기적 문제해결과정으로 인식", isCorrect: true },
+                    { text: "생태체계관점을 토대", isCorrect: false },
+                    { text: "개인, 가족, 집단, 지역사회 등 다양한 수준의 접근", isCorrect: false },
+                    { text: "체계와 환경 간의 관계 중시", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(09:45)에서 통합적 접근은 실천 과정을 '점진적(progressive) 문제해결과정'으로 인식합니다. '획기적' 과정이 아닙니다."
+            },
+            {
+                year: 2015,
+                question: "<보기>에서 통합적 사회복지실천 모델 중 '생활 모델'의 내용 또는 특성으로 옳은 것을 모두 고른 것은? <보기> (ㄱ) 클라이언트의 회복력을 전제로 스스로 삶을 결정할 수 있도록 능력 부여 (ㄴ) 개인은 환경과 상호작용하는 관계 속에서 지속적으로 적응해 나감 (ㄷ) 만족스런 삶을 영위하기 위해서 주변 환경의 체계에 의존 (ㄹ) 한 개인의 결점에 초점을 맞추지 않고 클라이언트의 장점과 삶의 과정상 나타나는 실천적 관계에 초점을 맞추어 상호 작용하도록 함",
+                options: [
+                    { text: "(ㄱ), (ㄷ)", isCorrect: false },
+                    { text: "(ㄴ), (ㄷ)", isCorrect: true },
+                    { text: "(ㄴ), (ㄹ)", isCorrect: false },
+                    { text: "(ㄱ), (ㄴ), (ㄹ)", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(36:38)에서 저메인과 지터만(Jermaine & Zitterman)의 '생활 모델'은 '사람과 환경의 상호작용'을 중시하며(ㄴ), 7강(34:39)의 핀커스와 미나한 모델의 전제처럼 '만족스러운 삶을 위해 환경 체계에 의존'합니다(ㄷ). (ㄱ)과 (ㄹ)은 임파워먼트/강점 관점에 더 가깝습니다."
+            },
+            {
+                year: 2015,
+                question: "'가족체계'에 대한 설명으로 옳은 것은?",
+                options: [
+                    { text: "방임형 가족체계는 가족외부와의 경계가 분명하면서도 침투력이 있는 특징을 가진다.", isCorrect: false },
+                    { text: "가족이 안정된 상태로 돌아가려는 경향과 균형을 이루려고 하는 속성을 순환적 인과성이라고 한다.", isCorrect: false },
+                    { text: "가족내 한 성원의 변화는 다른 성원을 반응하게 하는 자극이 되고 이 자극은 다른 가족에게 영향을 미치게 되어 전체에 영향을 주게 되는 것을 가족항상성이라고 한다.", isCorrect: false },
+                    { text: "가족은 상호의존적 하위체계들의 복합체로 구성되어 있다.", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 7강(19:13)에서 가족체계는 부부, 부모-자녀, 형제-자매 체계 등 '상호의존적인 하위체계들의 복합체'로 구성된다고 설명합니다."
+            },
+            {
+                year: 2015,
+                question: "사회복지실천에서 전문적 관계의 특징으로 옳지 않은 것은?",
+                options: [
+                    { text: "의도적 목적성", isCorrect: false },
+                    { text: "수평적 관계성", isCorrect: true },
+                    { text: "시간의 제한성", isCorrect: false },
+                    { text: "클라이언트에 대한 헌신", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(15:04)에서 전문적 관계의 특성으로 '권위성(authority)'을 설명합니다. 이는 전문성에 기반한 권위로, 완전한 '수평적 관계성'과는 구별됩니다."
+            },
+            {
+                year: 2015,
+                question: "사회복지실천에서 전문적 관계형성의 장애요인 중 다음 <보기>의 설명에 해당하는 것은? <보기> 사회복지사가 클라이언트를 마치 자신의 과거 어떤 인물이나 그와의 관계인 것처럼 느끼고 무의식적으로 그 관계와 같이 반응",
+                options: [
+                    { text: "불신", isCorrect: false },
+                    { text: "역전이", isCorrect: true },
+                    { text: "전이", isCorrect: false },
+                    { text: "저항", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(46:00)에서 '역전이(counter-transference)'는 '사회복지사가' 클라이언트를 자신의 '과거 중요 인물'처럼 느끼고 '무의식적으로 반응'하는 현상이라고 설명합니다. (2016년 49번과 동일 문항)"
+            },
+            {
+                year: 2015,
+                question: "비에스텍(Biestek)이 제시한 사회복지실천 관계의 7가지 기본 원리 중 개별화에 관한 설명에 해당하는 것은?",
+                options: [
+                    { text: "클라이언트의 특수성을 인정하고 이해하며, 클라이언트를 원조하는 원리와 방법을 다르게 활용하는 것을 말한다.", isCorrect: true },
+                    { text: "사회복지사가 클라이언트로 하여금 자신의 감정을 자유롭게 표현하도록 하는 것이다.", isCorrect: false },
+                    { text: "사회복지사가 전문적인 관계를 통해서 얻은 클라이언트에 관한 정보를 누출시키지 않는 것을 말한다.", isCorrect: false },
+                    { text: "클라이언트가 자신의 감정을 표현할 때, 사회복지사가 클라이언트의 감정에 적절하게 반응하는 것을 말한다.", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(32:32)에서 '개별화(individualization)'는 클라이언트의 '고유한 특수성을 인정하고 이해'하며, 이에 맞춰 원조 원리와 방법을 다르게 활용하는 것을 의미합니다. (2016년 48번과 유사 문항)"
+            },
+            {
+                year: 2015,
+                question: "사회복지실천에서 면접의 구조적 조건으로 적합하지 않은 것은?",
+                options: [
+                    { text: "면접 장소는 조용하면서 개인의 비밀이 보장되는 곳이어야 한다.", isCorrect: false },
+                    { text: "면접일정은 클라이언트와 사전에 일정을 잡고, 하루 전 확인을 하는 것이 좋다.", isCorrect: false },
+                    { text: "면접 장소를 선정할 때에는 너무 어둡거나 밝지 않은 채광을 고려해야 한다.", isCorrect: false },
+                    { text: "클라이언트의 주의집중을 위해 보통 면접시간의 제한은 두지 않는다.", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 9강(09:55)에 따르면, 집중력 유지를 위해 면접 시간은 '보통 40분에서 50분 이내'로 제한하는 것이 일반적입니다."
+            },
+            {
+                year: 2015,
+                question: "면접의 방법들 중 개념과 설명을 올바르게 짝지은 것은? <보기> A.요약 (ㄱ)클라이언트의 생각, 행동, 감정을 사회복지사의 언어로 정리하는 것 B.질문 (ㄴ)클라이언트가 미처 알지 못한 자신의 문제를 이해할 수 있도록 하는 것 C.해석 (ㄷ)클라이언트가 문제에 관한 자신의 생각과 느낌을 표현하도록 효과적으로 이끌기 위한 방법",
+                options: [
+                    { text: "A-(ㄴ), B-(ㄱ), C-(ㄷ)", isCorrect: false },
+                    { text: "A-(ㄴ), B-(ㄷ), C-(ㄱ)", isCorrect: false },
+                    { text: "A-(ㄱ), B-(ㄷ), C-(ㄴ)", isCorrect: true },
+                    { text: "A-(ㄷ), B-(ㄴ), C-(ㄱ)", isCorrect: false }
+                ],
+                explanation: "강의 스크립트에 따르면, A.요약은 클라이언트의 이야기를 사회복지사의 언어로 '정리하는 것'(9강 27:34)입니다(ㄱ). B.질문은 정보 수집 및 '생각과 느낌을 표현하도록 이끄는 것'(9강 25:33)입니다(ㄷ). C.해석은 클라이언트가 '알지 못한 문제(숨겨진 메시지)를 이해하도록' 돕는 것(9강 29:20)입니다(ㄴ)."
+            },
+            {
+                year: 2015,
+                question: "면접 기록의 유형에 대한 설명으로 옳은 것은?",
+                options: [
+                    { text: "컴퓨터와 표준화된 기록은 고문서 기록에 효율적이고 정정이 용이하다.", isCorrect: false },
+                    { text: "최소 기본 기록은 사회복지실천에서 가장 오랜 역사를 가지고 있는 기록법이다.", isCorrect: false },
+                    { text: "과정기록은 가장 많이 사용되는 기록형태로 시간대별로 서술하거나 요약체를 활용하는 방법이다.", isCorrect: false },
+                    { text: "목표중심기록은 단순히 기록 차원을 넘어 문제해결 접근방법을 반영하며, 측정도구와 코멘트를 조합하는 기록양식이다.", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 9강(42:17)에서 '문제중심기록(POR)' (질문은 '목표중심기록'이나 사실상 POR을 설명)은 '문제해결 접근방법을 반영'하며 '측정도구와 코멘트를 조합'하는 방식이라고 설명합니다. 과정기록(9강 39:20)은 가장 오랜 역사를 가졌지만 가장 많이 사용되지는 않습니다."
+            },
+            {
+                year: 2015,
+                question: "사회복지실천 과정 중 접수 단계에서 사회복지사의 역할과 태도에 대한 설명으로 옳지 않은 것은?",
+                options: [
+                    { text: "클라이언트와의 관계수립보다 정보수집이나 변화를 위한 개입에 초점을 두어야 한다.", isCorrect: true },
+                    { text: "클라이언트가 경험하는 생활상의 고충에 대해 진심으로 이해하고 공감하도록 해야 한다.", isCorrect: false },
+                    { text: "클라이언트와 가족에게 기관의 정책과 가능한 서비스, 클라이언트에게 요구되는 과업, 기관의 한계점을 설명해야 한다.", isCorrect: false },
+                    { text: "클라이언트의 연령, 성, 성정체성, 사회경제적 지위, 문화 등 인간의 다양성을 고려하여 문제를 탐색, 확인해야 한다.", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 10강(11:20)에서 접수 단계에서는 '클라이언트와의 좋은 관계 수립(building relationships)'에 '초점을 두어야 한다'고 강조합니다. 정보수집이나 개입보다 관계 형성이 우선입니다."
+            },
+            {
+                year: 2015,
+                question: "<보기>에서 사회복지사가 수집해야 하는 자료의 영역에 해당하는 것을 모두 고른 것은? <보기> (ㄱ) 클라이언트에 대한 기본적인 정보 (ㄴ) 개인력 (ㄷ) 문제에 대한 깊이 있는 정보 (ㄹ) 가족력",
+                options: [
+                    { text: "(ㄱ), (ㄴ)", isCorrect: false },
+                    { text: "(ㄴ), (ㄷ)", isCorrect: false },
+                    { text: "(ㄴ), (ㄷ), (ㄹ)", isCorrect: false },
+                    { text: "(ㄱ), (ㄴ), (ㄷ), (ㄹ)", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 10강(26:19)에서 자료수집의 7가지 영역으로 (ㄱ)기본 정보, (ㄷ)문제에 대한 깊이 있는 정보, (ㄴ)개인력, (ㄹ)가족력 등을 모두 포함하여 설명하고 있습니다."
+            },
+            {
+                year: 2015,
+                question: "<보기>에서 설명하는 사정의 기술은? <보기> •클라이언트의 삶에 영향을 미치는 조직이나 요인을 원을 사용하여 나타냄으로써 그들의 사회적 맥락을 표현하는 실천기법 •가족에 대한 현재 지역사회 자원이나 체계들의 영향과 상호작용의 변화를 보여줌",
+                options: [
+                    { text: "표준화된 심리검사", isCorrect: false },
+                    { text: "가계도", isCorrect: false },
+                    { text: "생태도", isCorrect: true },
+                    { text: "생활력조사", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 11강(21:43)에서 '생태도'는 '클라이언트의 삶에 영향을 미치는 조직이나 요인을 원을 사용하여' 클라이언트와의 관계, 자원 등을 표현하는 기법이라고 설명합니다. (2016년 57번과 동일 문항)"
+            },
+            {
+                year: 2015,
+                question: "진단과 구별되는 문제 사정의 특징으로 옳지 않은 것은?",
+                options: [
+                    { text: "문제 이해를 위해 심리적 측면 외에 환경적 측면도 고려한다.", isCorrect: false },
+                    { text: "변화의 대상이 환경적·제도적 영역까지 확대된다.", isCorrect: false },
+                    { text: "클라이언트의 참여를 무엇보다 중요시한다.", isCorrect: false },
+                    { text: "클라이언트는 병적인 존재이자 수동적인 존재로 인정한다.", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 11강(05:04)에서 사정(Assessment)은 클라이언트를 '문제해결 능력을 가진 능동적 존재(active being)'로 봅니다. '수동적인 존재'로 보는 것은 진단(Diagnosis)의 특징에 가깝습니다."
+            },
+            {
+                year: 2015,
+                question: "개입을 위한 구체적 활동을 결정 시, 사회복지사가 반드시 고려해야 할 기본 원칙 중 <보기>의 설명에 해당하는 것은? <보기> 선택된 활동은 사회복지사와 클라이언트의 시간과 비용을 최소화할 수 있는 것이어야 한다.",
+                options: [
+                    { text: "경제성", isCorrect: true },
+                    { text: "상호의존성", isCorrect: false },
+                    { text: "개별화", isCorrect: false },
+                    { text: "클라이언트의 자기결정", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 12강(05:40)에서 개입의 기본 원칙 중 '경제성(economic)'은 클라이언트의 '시간과 비용을 효과적으로 사용(최소화)'하는 것을 의미한다고 설명합니다."
+            },
+            {
+                year: 2015,
+                question: "클라이언트 변화를 위한 직접적 개입의 기술 중 다른 세 개와 성격이 다른 하나는?",
+                options: [
+                    { text: "재보증", isCorrect: false },
+                    { text: "격려", isCorrect: false },
+                    { text: "환기법", isCorrect: false },
+                    { text: "모델링", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 12강(25:39)에서 '모델링'은 '행동변화기술'로 분류됩니다. 반면 '재보증', '격려', '환기법' 등은 12강(23:48)에서 설명하는 '의사소통기술'에 속합니다. (2016년 61번과 동일 문항)"
+            },
+            {
+                year: 2015,
+                question: "평가의 유형에 관한 설명으로 옳지 않은 것은?",
+                options: [
+                    { text: "평가는 단계에 따라 형성평가와 총괄평가로 구분된다.", isCorrect: true },
+                    { text: "성과평가란 목표에 비추어 성취된 결과를 평가하는 것이다.", isCorrect: false },
+                    { text: "형성평가는 실천의 과정에서 주기적으로 진전 상황과 영향 요소들을 평가하는 것이다.", isCorrect: false },
+                    { text: "사회복지사 평가는 개입과정 동안 사회복지사의 행동이나 태도 등이 개입에 어떠한 영향을 주었는지 알아보기 위해 클라이언트로부터 피드백을 받는 것을 말한다.", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 13강(08:45)에 따르면, 형성평가와 총괄평가는 '시기(time)'에 따른 분류입니다. '단계(step)'에 따른 분류는 성과평가, 과정평가, 사회복지사 평가 등입니다. 따라서 (1)번 설명은 옳지 않습니다."
+            },
+            {
+                year: 2015,
+                question: "<보기>에서 설명하는 평가설계 방법은? <보기> • 사회복지사와 클라이언트가 합의한 개입과제 완수 정도를 확인하는 평가 방법 • 과제의 진척을 평가하기 위해 척도 사용",
+                options: [
+                    { text: "단일사례설계", isCorrect: false },
+                    { text: "목표달성척도", isCorrect: false },
+                    { text: "과업성취척도", isCorrect: true },
+                    { text: "클라이언트 만족도 평가", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 13강(16:12)에서 '과업성취척도(Task Achievement Scale)'는 '클라이언트와 사회복지사가 합의한 개입 과제'의 '완수 정도를 확인'하는 평가 방법이라고 설명합니다."
+            },
+            {
+                year: 2015,
+                question: "<보기>에서 종결을 위한 점검사항에 해당하는 것을 모두 고르면? <보기> (ㄱ) 종결에 대한 명확한 기준 여부 (ㄴ) 종결에 대한 절차와 준비도 (ㄷ) 종결이 의뢰 또는 다른 기관에 대한 전이로 일어난 것이라면 이 과정에 대한 관리",
+                options: [
+                    { text: "(ㄱ)", isCorrect: false },
+                    { text: "(ㄴ), (ㄷ)", isCorrect: false },
+                    { text: "(ㄱ), (ㄷ)", isCorrect: false },
+                    { text: "(ㄱ), (ㄴ), (ㄷ)", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 13강(21:07)에서 종결 시 결정(점검) 사항으로 (ㄱ)종결 시기(기준), (ㄴ)클라이언트의 준비도, (ㄷ)의뢰 필요 여부(전이 관리) 등을 모두 언급하고 있습니다."
+            },
+            {
+                year: 2015,
+                question: "사례관리의 등장배경으로 적합하지 않은 것은?",
+                options: [
+                    { text: "탈시설화", isCorrect: false },
+                    { text: "서비스 전달의 지방분권화", isCorrect: false },
+                    { text: "복합적 욕구를 지닌 인구의 점진적 감소", isCorrect: true },
+                    { text: "사회적 지원체계와 관계망의 중요성에 대한 인식 증가", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 14강(04:57)에서 사례관리의 등장 배경으로 '복합적이고 다양한 욕구를 가진 인구의 증가'를 설명합니다. '인구의 감소'가 아닙니다."
+            },
+            {
+                year: 2015,
+                question: "'클라이언트의 입장'에서의 사례관리의 목적에 해당하지 않는 것은?",
+                options: [
+                    { text: "서비스 제공의 연속성 보장", isCorrect: false },
+                    { text: "통합적·개별적 서비스 이용", isCorrect: false },
+                    { text: "사회적 기능 향상 및 역량강화", isCorrect: false },
+                    { text: "한정된 사회자원 내에서 서비스 전달의 효과 최대화", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 14강(28:42)에서 '클라이언트 입장'의 목적은 서비스 연속성, 개별적 이용, 기능 향상 등입니다. '한정된 자원 내 효과 최대화'는 '지역사회 조직(local community organization)'의 입장에서의 목적입니다."
+            },
+            {
+                year: 2015,
+                question: "사례관리자의 역할 중 클라이언트의 욕구충족과 문제해결 및 사회적 기능 향상을 위해 클라이언트와 필요한 서비스를 연결해주는 역할을 지칭하는 것은?",
+                options: [
+                    { text: "사정자", isCorrect: false },
+                    { text: "중개자", isCorrect: true },
+                    { text: "조정자", isCorrect: false },
+                    { text: "중재자", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 15강(31:58)에서 '중개자(mediator/broker)'는 클라이언트의 욕구 충족을 위해 '필요한 자원과 서비스를 연결'해주는 역할이라고 설명합니다."
+            },
+            {
+                year: 2015,
+                question: "일반적으로 가장 널리 제시되는 사례관리 과정으로 빈칸에 들어갈 용어를 바르게 짝지은 것은? <보기> 접수 → ( 가 ) → 계획 → ( 나 ) → ( 다 ) → 종결 및 사후관리",
+                options: [
+                    { text: "(가)사정, (나)서비스계획, (다)점검 및 재사정", isCorrect: false },
+                    { text: "(가)사정, (나)개입 및 조정, (다)점검 및 재사정", isCorrect: true },
+                    { text: "(가)사정, (나)점검 및 재사정, (다)개입 및 조정", isCorrect: false },
+                    { text: "(가)목표설정, (나)사정, (다)철수", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 15강(08:33)에서 제시하는 6단계 사례관리 과정은 [접근(접수)] → [사정] → [계획] → [실행(개입 및 조정)] → [점검/재사정(모니터링)] → [평가/종결(사후관리)] 입니다. 따라서 (가)사정, (나)개입 및 조정, (다)점검 및 재사정 순서가 맞습니다."
+            },
+            
+            // --- 2019년도 ---
+            {
+                year: 2019,
+                question: "다음 사회복지기관들 중, 이용시설에 포함되지 않는 것은?",
+                options: [
+                    { text: "청소년쉼터", isCorrect: true },
+                    { text: "재가복지센터", isCorrect: false },
+                    { text: "장애인복지관", isCorrect: false },
+                    { text: "치매주간보호센터", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 5강(10:17)에 따르면, '청소년쉼터'는 '복지기관, 청소년쉼터, 공동생활가정' 등과 함께 숙식을 하며 서비스가 제공되는 '생활시설'로 분류됩니다. 반면 '이용시설'은 숙식 없이 필요한 프로그램이나 사업을 이용하는 곳입니다."
+            },
+            {
+                year: 2019,
+                question: "친부모가 자녀를 양육할 수 없거나 양육할 의지가 없을 경우 아동에게 영구적인 대리보호를 제공하는 아동복지 사업은?",
+                options: [
+                    { text: "아동상담사업", isCorrect: false },
+                    { text: "가정위탁보호사업", isCorrect: false },
+                    { text: "입양사업", isCorrect: true },
+                    { text: "보육사업", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 5강(27:08)에서 '가정위탁보호 사업'은 '일정 기간 동안' 아동을 보호하는 대리보호라고 설명합니다. 반면 '입양 사업'(28:07)은 친부모가 양육을 포기할 경우 아동을 가족의 자녀로 등록하는 '영구적인' 대리보호 방식입니다."
+            },
+            {
+                year: 2019,
+                question: "학생의 심리사회적 문제를 예방 및 해결하는 교육기능의 한 부분이자 사회복지 전문분야를 일컫는 개념은?",
+                options: [
+                    { text: "지역사회복지", isCorrect: false },
+                    { text: "아동복지", isCorrect: false },
+                    { text: "학교사회복지", isCorrect: true },
+                    { text: "정신보건사회복지", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 5강(29:57)에서 '학교사회복지'는 '학교에서 아동들이 겪는 다양한 심리적 문제'를 해결하고 '학생-학교-지역사회의 연계'를 통해 학생복지를 실현하는 '교육기능의 한 부분'이라고 설명합니다."
+            },
+            {
+                year: 2019,
+                question: "클라이언트와 지역사회의 자원이나 서비스를 적절하게 연결하는 것을 돕는 사회복지사의 역할은?",
+                options: [
+                    { text: "옹호자", isCorrect: false },
+                    { text: "중개자", isCorrect: true },
+                    { text: "중재자", isCorrect: false },
+                    { text: "촉진자", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 6강(19:31)에서 '중개자(broker)' 역할은 '클라이언트와 지역사회의 다양한 자원 및 서비스를 적절하게 연결'하고 교환을 용이하게 하는 역할이라고 설명합니다."
+            },
+            {
+                year: 2019,
+                question: "개입 수준에 따라 사회복지사의 역할을 분류할 때, 중범위 수준에 해당하는 것은?",
+                options: [
+                    { text: "조력자", isCorrect: false },
+                    { text: "교사", isCorrect: false },
+                    { text: "중재자", isCorrect: true },
+                    { text: "현장개입가", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 6강(26:57)에서 개입 수준에 따른 역할을 분류할 때, '중범위(meso) 수준'의 역할로 '중재자(mediator)'와 '촉진자(facilitator)' 등을 언급합니다. 조력자, 교사 등은 미시적 수준, 현장개입가(행동가)는 거시적 수준에 속합니다."
+            },
+            {
+                year: 2019,
+                question: "사회복지실천의 통합적 접근의 특성과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "개인의 사회적 과업에 대한 관심", isCorrect: false },
+                    { text: "자원체계 간 상호작용의 필수성", isCorrect: false },
+                    { text: "개인의 문제를 개인이나 가족에 한정", isCorrect: true },
+                    { text: "클라이언트의 잠재성을 인정", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(08:52)에 따르면, '통합적 접근'은 개인, 가족, 지역사회 등 '다양한 수준의 체계'에 접근합니다. 문제를 개인이나 가족에 '한정'하는 것은 통합적 접근이 비판한 '전통적(단편적) 접근'의 한계입니다(7강 03:19)."
+            },
+            {
+                year: 2019,
+                question: "핀커스와 미나한(Pincus & Minahan)의 4체계 모델에서 변화 매개인이 변화를 달성하거나 그와 관련된 목표를 달성하기 위해 영향을 미칠 필요가 있는 사람들을 의미하는 것은?",
+                options: [
+                    { text: "클라이언트 체계", isCorrect: false },
+                    { text: "행동체계", isCorrect: false },
+                    { text: "표적체계", isCorrect: true },
+                    { text: "변화매개체계", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(36:38)에서 '표적체계(target system)'는 '변화매개인(사회복지사)이 목표를 달성하기 위해 영향을 미칠 필요가 있는 사람'으로, 클라이언트 체계와 동일할 수도 있지만 다를 수도 있다고 설명합니다."
+            },
+            {
+                year: 2019,
+                question: "비에스텍(Biestek)이 제시한 관계형성의 7가지 원리에 해당하지 않는 것은?",
+                options: [
+                    { text: "집단화", isCorrect: true },
+                    { text: "의도적 감정표현", isCorrect: false },
+                    { text: "수용", isCorrect: false },
+                    { text: "비심판적 태도", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(31:29)에서 비에스텍의 7가지 원리로 ①개별화, ②의도적 감정표현, ③통제된 정서적 관여, ④수용, ⑤비심판적 태도, ⑥자기결정, ⑦비밀보장을 제시합니다. '집단화'는 이에 포함되지 않습니다."
+            },
+            {
+                year: 2019,
+                question: "접수단계에서 사회복지사의 필수 과업과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "문제 확인", isCorrect: false },
+                    { text: "의뢰", isCorrect: false },
+                    { text: "참여 유도", isCorrect: false },
+                    { text: "심리검사", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 10강(12:21)에서 접수(Intake) 단계의 과업으로 ①문제 확인, ②관계 수립 및 참여 유도, ③정보 제공, ④의뢰 등을 설명합니다. '심리검사'는 접수 단계가 아닌 이후 '자료수집' 또는 '사정' 단계에서 필요시 활용됩니다(10강 23:20, 11강 19:00)."
+            },
+            {
+                year: 2019,
+                question: "진단과 구별되는 사정(Assessment)의 특징으로 옳지 않은 것은?",
+                options: [
+                    { text: "클라이언트의 참여가 중요", isCorrect: false },
+                    { text: "변화 대상이 환경적·제도적 영역까지 확대", isCorrect: false },
+                    { text: "클라이언트를 문제해결에 있어 수동적 존재로 인정", isCorrect: true },
+                    { text: "문제의 이해를 위한 심리적·환경적 측면 고려", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 11강(03:07)에서 사정(Assessment)은 진단(Diagnosis)과 달리 '포괄적'이며 '환경적 측면'을 고려하고, '클라이언트의 참여'를 매우 중요시한다고 설명합니다. 또한 클라이언트를 '문제해결 능력을 가진 능동적 존재'로 봅니다(11강 05:04). 따라서 '수동적 존재로 인정'하는 것은 사정이 아닌 진단의 특징에 가깝습니다."
+            },
+            {
+                year: 2019,
+                question: "가족 내부의 관계변화를 위한 실천방법 중, 두 사람 간 갈등해결 방법으로 제3자를 갈등 상황으로부터 분리시켜 문제를 해결하는 것은?",
+                options: [
+                    { text: "경계 만들기", isCorrect: false },
+                    { text: "탈삼각화", isCorrect: true },
+                    { text: "균형 깨뜨리기", isCorrect: false },
+                    { text: "역할연습", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 12강(31:19)에서 '탈삼각화(de-triangularization)'는 가족 내 삼각관계(triangular relationships)에서 발생하는 갈등을 해결하기 위해 제3자를 분리시키는 기법으로 설명됩니다."
+            },
+            {
+                year: 2019,
+                question: "사례관리의 등장 배경과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "클라이언트의 시설 집중화", isCorrect: true },
+                    { text: "서비스 전달의 지방분권화", isCorrect: false },
+                    { text: "복합적 욕구를 가진 인구 증가", isCorrect: false },
+                    { text: "기존의 단편적 서비스의 한계", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 14강(02:53)에서 사례관리의 등장 배경으로 '탈시설화(de-institutionalization)'를 설명합니다. 즉, 클라이언트가 시설에서 나와 지역사회로 돌아오면서 복합적이고 지속적인 서비스가 필요해졌습니다. '시설 집중화'는 그 반대 개념입니다."
+            },
+            {
+                year: 2019,
+                question: "사례관리에서 목표설정과 이를 달성하기 위한 전략, 역할, 장소, 비용 등에 대해 사례관리자와 클라이언트가 동의하는 것은?",
+                options: [
+                    { text: "계약", isCorrect: true },
+                    { text: "사정", isCorrect: false },
+                    { text: "접수", isCorrect: false },
+                    { text: "모니터링", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 15강(19:37)에서 '계약'은 설정된 목표, 과업, 역할, 장소, 비용, 개입 방법 등에 대해 '사례관리자와 클라이언트가 상호 동의'하는 과정이라고 설명합니다."
+            },
+
+            // --- 2018년도 ---
+            {
+                year: 2018,
+                question: "주거서비스 제공 여부에 따라 사회복지시설을 분류할 때, 이용시설에 해당하는 것은?",
+                options: [
+                    { text: "장애인생활시설", isCorrect: false },
+                    { text: "보육원", isCorrect: false },
+                    { text: "치매요양센터", isCorrect: false },
+                    { text: "청소년상담센터", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 5강(10:17)에서 '생활시설'은 '장애인생활시설', '보육원', '치매요양센터(노인요양시설)'처럼 숙식을 제공하는 곳입니다. 반면 '이용시설'(11:09)은 '청소년상담센터', '지역아동센터'처럼 숙식 없이 프로그램을 이용하는 곳입니다."
+            },
+            {
+                year: 2018,
+                question: "클라이언트와 지역사회의 자원이나 서비스를 적절하게 연결하는 사회복지사의 역할은?",
+                options: [
+                    { text: "옹호자", isCorrect: false },
+                    { text: "중재자", isCorrect: false },
+                    { text: "중개자", isCorrect: true },
+                    { text: "평가자", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 6강(19:31)에서 '중개자(broker)' 역할은 '클라이언트와 지역사회의 다양한 자원 및 서비스를 적절하게 연결'하고 교환을 용이하게 하는 역할이라고 설명합니다."
+            },
+            {
+                year: 2018,
+                question: "전통적 사회복지실천의 한계와 가장 거리가 먼 것은?",
+                options: [
+                    { text: "극히 제한된 문제에만 적용 가능", isCorrect: false },
+                    { text: "서비스 분화 초래", isCorrect: false },
+                    { text: "종합적 교육훈련", isCorrect: true },
+                    { text: "사회복지 전문직 확립에 장애", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(05:12)에서 전통적 실천의 한계로 '분화된 교육훈련'을 지적합니다. 이로 인해 사회복지 전문직의 정체성 확립에 장애가 되었습니다. '종합적 교육훈련'은 이러한 한계를 극복하기 위한 통합적 접근의 특징입니다."
+            },
+            {
+                year: 2018,
+                question: "가족체계의 주요 구성 개념 중, <보기>의 괄호 안에 들어갈 개념은? <보기> 가족구성원들은 ( 환류고리 )에 따라 규범을 강화하기도 하고 가족 규범에서 벗어나려는 행동을 부적( 환류고리 )을(를) 통해 저지하며 가족의 항상성을 유지한다.",
+                options: [
+                    { text: "환류고리(과정)", isCorrect: true },
+                    { text: "하위체계", isCorrect: false },
+                    { text: "순환적 인과관계", isCorrect: false },
+                    { text: "가족규범", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(23:06)에서 '가족규범'은 따라야 할 행동이나 태도를 명시하며, '환류고리(feedback loop)'는 이러한 규범에서 벗어나려는 행동을 저지(부적 환류)하거나 변화를 강화(정적 환류)하여 '가족 항상성'을 유지하는 기제라고 설명합니다."
+            },
+            {
+                year: 2018,
+                question: "사회복지실천에서 전문적 관계의 특성 중, 객관성을 유지하고 자기 자신의 감정, 반응, 충동을 자각하고 그 책임을 진다는 의미는?",
+                options: [
+                    { text: "통제성", isCorrect: true },
+                    { text: "권위성", isCorrect: false },
+                    { text: "시간의 제한성", isCorrect: false },
+                    { text: "의도적 목적성", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(16:03)에서 전문적 관계의 '통제성'은 사회복지사가 클라이언트에 대해 갖는 감정이나 생각을 '자각'하고, 전문적 책임을 다하기 위해 이를 '통제'하는 것을 의미한다고 설명합니다."
+            },
+            {
+                year: 2018,
+                question: "관계형성의 장애요인으로 클라이언트가 어린 시절 누군가에 대한 바람이나 원망 등 무의식적인 감정을 사회복지사에게 강한 저항으로 표출하는 것은?",
+                options: [
+                    { text: "전이", isCorrect: true },
+                    { text: "역전이", isCorrect: false },
+                    { text: "불신", isCorrect: false },
+                    { text: "비자발성", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(44:02)에서 '전이(transference)'는 클라이언트가 과거(어린 시절) 중요했던 인물에게 느꼈던 감정이나 욕구, 원망 등을 '무의식적으로 사회복지사에게 표출'하는 현상이라고 설명합니다."
+            },
+            {
+                year: 2018,
+                question: "면접에서 클라이언트의 문제상황에 대한 정보를 수집하고 클라이언트가 자신의 생각과 느낌을 표현하도록 효과적으로 이끌기 위한 방법은?",
+                options: [
+                    { text: "관찰", isCorrect: false },
+                    { text: "경청", isCorrect: false },
+                    { text: "질문", isCorrect: true },
+                    { text: "요약", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 9강(25:33)에서 '질문' 기술은 '클라이언트의 문제에 대한 정보를 수집'하고, '자신의 생각과 느낌을 표현하도록 효과적으로 이끌기' 위해 적절한 질문을 적시에 던지는 것이라고 설명합니다."
+            },
+            {
+                year: 2018,
+                question: "진단과 구별되는 문제 사정(Assessment)의 특징으로 옳은 것은?",
+                options: [
+                    { text: "내적인 심리적 측면만 고려", isCorrect: false },
+                    { text: "변화의 대상이 클라이언트로 국한", isCorrect: false },
+                    { text: "클라이언트는 치료의 대상", isCorrect: false },
+                    { text: "클라이언트를 능동적 존재로 인정", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 11강(05:04)에서 사정(Assessment)은 클라이언트를 '문제해결 능력을 가진 능동적 존재'로 본다고 설명합니다. 반면 진단(Diagnosis)은 내적/심리적 측면에 초점을 맞추고 클라이언트를 수동적인 치료의 대상으로 보는 경향이 있습니다(11강 03:07)."
+            },
+            {
+                year: 2018,
+                question: "클라이언트의 생애 동안 발생한 사건이나 문제의 발전과정을 사정하는 데 유용한 사정기술은?",
+                options: [
+                    { text: "표준화된 심리검사", isCorrect: false },
+                    { text: "가계도", isCorrect: false },
+                    { text: "생태도", isCorrect: false },
+                    { text: "생활력 조사", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 11강(23:31)에서 '생활력 조사(Life History Grid)'는 '클라이언트의 생애 동안 발생한 사건이나 문제의 발전과정'을 파악하는 데 유용하며, 출생부터 현재까지의 사건을 기록한다고 설명합니다."
+            },
+            {
+                year: 2018,
+                question: "개입에서 클라이언트의 변화를 위한 행동변화기술 중, 바람직한 행동을 하는 타인을 보고 그대로 모방함으로써 행동을 변화시키려는 것은?",
+                options: [
+                    { text: "강화", isCorrect: false },
+                    { text: "처벌", isCorrect: false },
+                    { text: "소거", isCorrect: false },
+                    { text: "모델링", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 12강(25:39)에서 행동변화 기술 중 하나인 '모델링(modeling)'은 바람직한 행동을 하는 '타인의 행동을 모방'함으로써 행동을 변화시키는 기법이라고 설명합니다."
+            },
+            {
+                year: 2018,
+                question: "개별사회사업과 구별되는 사례관리의 특성과 거리가 먼 것은?",
+                options: [
+                    { text: "개입의 목적은 개인의 욕구 충족", isCorrect: false },
+                    { text: "개입의 초점은 욕구에 대한 포괄적 사정과 자원연결 활동", isCorrect: false },
+                    { text: "개입의 효과성만 강조", isCorrect: true },
+                    { text: "적극적인 가정방문과 아웃리치", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 14강(24:58)에서 개별사회사업(Case Work)은 '개입의 효과성'을 주로 강조하는 반면, 사례관리(Case Management)는 '효과성뿐만 아니라 효율성, 특히 보호 비용(cost)의 효율성'을 함께 강조한다고 설명합니다."
+            },
+            {
+                year: 2018,
+                question: "사례관리의 주요 기능에 따른 사례관리자의 역할 중, <보기>에서 설명하는 것은? <보기> • 취약층인 사례관리자의 목소리 대변 • 지역사회자원 관련 정보 제공이나 협조로 클라이언트 지원",
+                options: [
+                    { text: "중개자", isCorrect: false },
+                    { text: "옹호자", isCorrect: true },
+                    { text: "조정자", isCorrect: false },
+                    { text: "기록보존자", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 15강(31:58)에서 '옹호자(advocate)'의 역할은 클라이언트의 목소리를 '대변'하고, 클라이언트에게 필요한 자원, 정보, 협조 등을 제공하여 클라이언트를 '지원'하는 것이라고 설명합니다."
+            },
+
+            // --- 2017년도 ---
+            {
+                year: 2017,
+                question: "사회복지실천 현장을 '기관의 기능 및 목적'에 따라 구분할 때, 1차 현장에 속하는 것은?",
+                options: [
+                    { text: "노인복지관", isCorrect: true },
+                    { text: "종합병원", isCorrect: false },
+                    { text: "학교", isCorrect: false },
+                    { text: "교도소", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 5강(05:38)에서 '1차 현장'은 기관의 주된 기능이 사회복지 서비스 제공인 곳(예: 노인복지관)이며, '2차 현장'은 다른 주된 기능(예: 의료, 교육, 교정)이 있고 사회복지 서비스는 부가적으로 제공되는 곳(예: 병원, 학교, 교도소)이라고 설명합니다."
+            },
+            {
+                year: 2017,
+                question: "아동복지사업의 종류 중, 아동이 친가정에서 정상적으로 양육될 수 없는 경우나 입양이나 시설보호가 불가능할 때 일정기간 동안 다른 가정에서 아동들을 보호 양육하는 대리보호 사업은?",
+                options: [
+                    { text: "아동상담사업", isCorrect: false },
+                    { text: "가정위탁보호사업", isCorrect: true },
+                    { text: "입양사업", isCorrect: false },
+                    { text: "보육사업", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 5강(27:08)에서 '가정위탁보호 사업'은 아동이 친가정에서 양육될 수 없을 때 '일정 기간 동안' 다른 가정에서 보호/양육하는 '대리보호' 방식이라고 설명합니다."
+            },
+            {
+                year: 2017,
+                question: "클라이언트들을 지역사회자원과 연계하고, 지역사회의 다양한 부분들이 상호이익 증진을 위한 교류를 하도록 돕는 사회복지사의 역할은?",
+                options: [
+                    { text: "촉진자(facilitator)", isCorrect: false },
+                    { text: "자문가(consultant)", isCorrect: false },
+                    { text: "중개자(broker)", isCorrect: true },
+                    { text: "옹호자(advocate)", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 6강(19:31)에서 '중개자(broker)' 역할은 '클라이언트와 지역사회의 다양한 자원 및 서비스를 적절하게 연결'하고 '교환을 용이하게' 하는 역할이라고 설명합니다."
+            },
+            {
+                year: 2017,
+                question: "개입 수준에 따라 사회복지사의 역할을 구분할 때, 개인과 가족에 대한 미시적 역할에 속하지 않는 것은?",
+                options: [
+                    { text: "중개자(broker)", isCorrect: false },
+                    { text: "교사(teacher)", isCorrect: false },
+                    { text: "옹호자(advocate)", isCorrect: false },
+                    { text: "현장노동자(outreach worker)", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 6강(26:57)에 따르면, '현장노동자/현장개입가(outreach worker/행동가)'는 '거시적 수준(macro-level)'의 역할입니다. 중개자, 교사, 옹호자 등은 '미시적 수준(micro-level)'의 역할에 속합니다."
+            },
+            {
+                year: 2017,
+                question: "통합적 사회복지실천이 대두되게 된 배경에 대한 설명과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "전통적 방법은 극히 제한된 특정 문제에만 적용할 수 있었다.", isCorrect: false },
+                    { text: "전통적 방법은 서비스의 분화를 초래하여 복합적인 복지 욕구를 가진 클라이언트들에게 부담이 되었다.", isCorrect: false },
+                    { text: "분화된 교육훈련은 사회복지 전문직의 정체성 확립에 장애가 되었다.", isCorrect: false },
+                    { text: "개별사회사업, 집단사회사업, 지역사회조직의 각 영역이 독립적으로 발전해 나갈 필요성이 강조되었다.", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 7강(03:19)에 따르면, 전통적 방법의 한계(제한된 적용, 서비스 분화, 분화된 교육훈련) 때문에 '통합적 접근'이 대두되었습니다. (4)는 통합이 아닌 '분화'를 강조하는 설명이므로 배경과 거리가 멉니다."
+            },
+            {
+                year: 2017,
+                question: "가족체계의 구성개념 중, <보기>의 설명에 해당하는 것은? <보기> • 가족 내 한 구성원의 변화는 다른 가족에게 영향을 미쳐 전체에 영향을 주게 된다. • 전체에 미친 영향은 처음 변화를 유발한 구성원에게 다시 순환적으로 영향을 미친다.",
+                options: [
+                    { text: "환류고리", isCorrect: false },
+                    { text: "순환적 인과성", isCorrect: true },
+                    { text: "가족항상성", isCorrect: false },
+                    { text: "하위체계", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 7강(21:17)에서 '순환적 인과성'은 가족 내 한 성원의 변화가 다른 성원에게 영향을 미치고, 그 영향이 다시 '처음 변화를 유발한 구성원에게 순환적으로 영향'을 미치는 현상이라고 설명합니다."
+            },
+            {
+                year: 2017,
+                question: "비에스텍(Biestek)이 제시한 사회복지실천 관계형성의 7가지 원리 중, <보기>의 설명에 해당하는 것은? <보기> • 클라이언트의 특수성을 인정하고 이해 • 인간에 대한 편견이나 선입관을 극복 • 클라이언트의 감정과 경험을 자신의 경험으로 받아들여 이해하고 느끼려는 노력",
+                options: [
+                    { text: "개별화", isCorrect: true },
+                    { text: "의도적 감정표현", isCorrect: false },
+                    { text: "수용", isCorrect: false },
+                    { text: "비심판적인 태도", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 8강(32:32)에서 '개별화(individualization)'는 클라이언트의 '고유한 특수성을 인정하고 이해'하며, '편견이나 선입관을 극복'하고, '감정과 경험을 이해'하려는 노력을 포함합니다."
+            },
+            {
+                year: 2017,
+                question: "사회복지실천에서 면접의 방법 중, 클라이언트의 문제상황에 대한 정보를 수집하고 클라이언트가 문제에 관한 자신의 생각과 느낌을 표현하도록 이끌기 위한 것은?",
+                options: [
+                    { text: "관찰", isCorrect: false },
+                    { text: "경청", isCorrect: false },
+                    { text: "침묵", isCorrect: false },
+                    { text: "질문", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 9강(25:33)에서 '질문' 기술은 '클라이언트의 문제에 대한 정보를 수집'하고, '자신의 생각과 느낌을 표현하도록 효과적으로 이끌기' 위해 적절한 질문을 적시에 던지는 것이라고 설명합니다. (2018년 50번과 동일 문항)"
+            },
+            {
+                year: 2017,
+                question: "진단과 구별되는 문제 사정의 특성에 대한 설명으로 옳지 않은 것은?",
+                options: [
+                    { text: "클라이언트의 문제 이해를 위해 내적인 심리 측면 이외에 외부적 환경을 함께 고려한다.", isCorrect: false },
+                    { text: "변화의 대상이 환경적·제도적 영역까지 확대된다.", isCorrect: false },
+                    { text: "클라이언트는 사회복지사의 치료를 받는 변화의 대상으로만 간주된다.", isCorrect: true },
+                    { text: "클라이언트의 문제뿐 아니라 강점이 강조된다.", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 11강(05:04)에서 사정(Assessment)은 클라이언트를 '문제해결 능력을 가진 능동적 존재'로 보며, 치료의 '대상'으로만 간주하는 진단(Diagnosis)과 구별됩니다(11강 03:07)."
+            },
+            {
+                year: 2017,
+                question: "<보기>에서 설명하는 사정의 기술은? <보기> • 모든 임상실천에서 공통적으로 사용되는 방법 • 클라이언트의 생애 동안 발생한 사건이나 문제의 발전과정을 사정하는 데 유용 • 출생으로부터 연도 순으로 지역, 가족, 교육, 건강상태, 활동, 문제 등을 기록",
+                options: [
+                    { text: "표준화된 심리검사", isCorrect: false },
+                    { text: "생활력 조사", isCorrect: true },
+                    { text: "가계도", isCorrect: false },
+                    { text: "생태도", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 11강(23:31)에서 '생활력 조사(Life History Grid)'는 '클라이언트의 생애 동안 발생한 사건이나 문제의 발전과정'을 파악하는 데 유용하며, '출생부터 연도 순으로' 사건을 기록한다고 설명합니다."
+            },
+            {
+                year: 2017,
+                question: "클라이언트 변화를 위한 직접적 개입의 기술 중, 의사소통 기술에 속하지 않는 것은?",
+                options: [
+                    { text: "재보증", isCorrect: false },
+                    { text: "격려", isCorrect: false },
+                    { text: "초점화", isCorrect: false },
+                    { text: "모델링", isCorrect: true }
+                ],
+                explanation: "강의 스크립트 12강(25:39)에서 '모델링'은 '행동변화기술'로 분류됩니다. 반면 '재보증', '격려', '초점화' 등은 12강(23:48)에서 설명하는 '의사소통기술'에 속합니다. (2016년 61번, 2015년 63번과 유사 문항)"
+            },
+            {
+                year: 2017,
+                question: "평가를 단계별로 유형화할 때, <보기>에서 설명하는 것은? <보기> 결과평가(outcome evaluation)라고도 하며, 목표에 비추어 성취된 결과를 평가하는 것",
+                options: [
+                    { text: "성과평가", isCorrect: true },
+                    { text: "과정평가", isCorrect: false },
+                    { text: "사회복지사 평가", isCorrect: false },
+                    { text: "형성평가", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 13강(08:06)에서 '성과평가(result evaluation)'는 '결과평가(outcome evaluation)'라고도 하며, '목표에 비추어 성취된 결과'를 평가하는 것이라고 설명합니다."
+            },
+            {
+                year: 2017,
+                question: "사회복지실천에서 사례관리의 등장 배경과 가장 거리가 먼 것은?",
+                options: [
+                    { text: "탈시설화", isCorrect: false },
+                    { text: "서비스 전달의 중앙집권화", isCorrect: true },
+                    { text: "복합적 사회복지 욕구를 지닌 인구 증가", isCorrect: false },
+                    { text: "비용억제의 필요성 대두", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 14강(05:49)에서 사례관리의 등장 배경으로 '서비스 전달의 지방분권화'를 설명합니다. '중앙집권화'는 그 반대 개념입니다."
+            },
+            {
+                year: 2017,
+                question: "사례관리의 평가 유형 중, 사례관리 체계 및 기관의 역량에 대한 평가는?",
+                options: [
+                    { text: "구조평가", isCorrect: true },
+                    { text: "과정평가", isCorrect: false },
+                    { text: "결과평가", isCorrect: false },
+                    { text: "사후평가", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 15강(26:27)에서 '구조평가'는 '사례관리 체계 및 기관의 역량'에 대한 평가라고 설명합니다."
+            },
+            {
+                year: 2017,
+                question: "사례관리의 주요 기능에 따른 사례관리자의 역할 중, <보기>에서 설명하는 것은? <보기> • 서비스가 클라이언트에게 적절히 전달되고 효과적일 수 있도록 배열 • 중복 서비스가 생기지 않도록 개선 • 클라이언트와 서비스 제공자들 간 기능적 상호작용 촉진",
+                options: [
+                    { text: "사정자", isCorrect: false },
+                    { text: "중개자", isCorrect: false },
+                    { text: "조정자", isCorrect: true },
+                    { text: "평가자", isCorrect: false }
+                ],
+                explanation: "강의 스크립트 15강(32:59)에서 '조정자(controller)'는 서비스가 '적절히 전달되도록 배열'하고, '중복 서비스를 개선'하며, '기능적 상호작용을 촉진'하는 역할이라고 설명합니다."
+            }
+        ];
+
+        // --- 2. 퀴즈 어플리케이션 로직 ---
+        let uniqueQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        const loadingScreen = document.getElementById('loading-screen');
+        const quizContent = document.getElementById('quiz-content');
+        const resultsScreen = document.getElementById('results-screen');
+        
+        const qNum = document.getElementById('q-num');
+        const qTotal = document.getElementById('q-total');
+        const scoreDisplay = document.getElementById('score');
+        const yearBadge = document.getElementById('year-badge');
+        
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const explanationText = document.getElementById('explanation-text');
+        const nextBtn = document.getElementById('next-btn');
+
+        // DOM 콘텐츠 로드 완료 시 퀴즈 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuiz();
+        });
+
+        /**
+         * 텍스트 정규화 (중복 제거용)
+         * @param {string} text - 정규화할 문자열
+         * @returns {string} - 공백, 특수문자, <보기> 태그 등이 제거된 문자열
+         */
+        function normalizeText(text) {
+            if (typeof text !== 'string') return '';
+            return text.replace(/[\s\.,\?!<보기>\[\]\(\)]/g, '') // 공백, 구두점, 태그 제거
+                       .replace(/<br>/g, '') // <br> 태그 제거
+                       .toLowerCase(); // 소문자화
+        }
+
+        /**
+         * 퀴즈 로드 및 초기화
+         * 1. 문제 정규화 및 중복 제거 (최신 연도 우선 보존)
+         * 2. 퀴즈 UI 표시
+         */
+        function loadQuiz() {
+            // 연도 내림차순 정렬 (최신 연도 우선)
+            allQuestions.sort((a, b) => b.year - a.year);
+
+            const seenQuestions = new Set();
+            uniqueQuestions = allQuestions.filter(q => {
+                // 질문 텍스트와 옵션 텍스트를 조합하여 정규화
+                const optionsText = q.options.map(opt => normalizeText(opt.text)).sort().join('');
+                const normalizedQ = normalizeText(q.question) + optionsText;
+                
+                if (seenQuestions.has(normalizedQ)) {
+                    return false; // 중복이므로 제거
+                } else {
+                    seenQuestions.add(normalizedQ);
+                    return true; // 고유하므로 포함
+                }
+            });
+
+            // 연도 오름차순으로 다시 정렬 (오래된 문제부터 풀도록)
+            uniqueQuestions.sort((a, b) => a.year - b.year);
+
+            // 로딩 화면 숨기고 퀴즈 내용 표시
+            loadingScreen.classList.add('hidden');
+            quizContent.classList.remove('hidden');
+            
+            qTotal.textContent = uniqueQuestions.length;
+            
+            displayQuestion();
+        }
+
+        /**
+         * 현재 인덱스의 질문을 화면에 표시
+         */
+        function displayQuestion() {
+            // 피드백 및 다음 버튼 초기화
+            feedbackContainer.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            optionsContainer.innerHTML = ''; // 이전 선택지 삭제
+
+            if (currentQuestionIndex < uniqueQuestions.length) {
+                const q = uniqueQuestions[currentQuestionIndex];
+                
+                questionText.innerHTML = `${currentQuestionIndex + 1}. ${q.question}`.replace(/<보기>/g, '<div class="mt-2 p-3 bg-gray-100 border border-gray-300 rounded-md text-base font-normal">').replace(/<\/보기>/g, '</div>');
+                qNum.textContent = currentQuestionIndex + 1;
+                scoreDisplay.textContent = score;
+                yearBadge.textContent = `${q.year}년도`;
+
+                // 선택지 버튼 생성
+                q.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.innerHTML = `(${index + 1}) ${option.text}`;
+                    button.classList.add('option-btn');
+                    button.dataset.correct = option.isCorrect;
+                    
+                    button.addEventListener('click', () => selectOption(button, option.isCorrect, q));
+                    
+                    optionsContainer.appendChild(button);
+                });
+
+            } else {
+                // 퀴즈 종료
+                showResults();
+            }
+        }
+
+        /**
+         * 선택지 클릭 시 처리
+         * @param {HTMLButtonElement} selectedButton - 클릭된 버튼
+         * @param {boolean} isCorrect - 정답 여부
+         * @param {object} questionData - 현재 질문 객체 (해설 및 정답 포함)
+         */
+        function selectOption(selectedButton, isCorrect, questionData) {
+            // 모든 버튼 비활성화
+            const buttons = optionsContainer.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                // 정답 버튼 표시
+                if (btn.dataset.correct === 'true') {
+                    btn.classList.add('correct');
+                }
+            });
+
+            // 클릭한 버튼 채점
+            if (isCorrect) {
+                selectedButton.classList.add('correct');
+                score++;
+                scoreDisplay.textContent = score; // 점수 즉시 업데이트
+            } else {
+                selectedButton.classList.add('incorrect');
+            }
+
+            // 정답 찾기
+            const correctOption = questionData.options.find(opt => opt.isCorrect);
+            const correctOptionIndex = questionData.options.indexOf(correctOption);
+            const correctAnswerText = `<strong class='text-blue-600'>정답: ${correctOptionIndex + 1}번 (${correctOption.text})</strong><br><br>`;
+
+            // 해설 표시
+            explanationText.innerHTML = correctAnswerText + questionData.explanation;
+            feedbackContainer.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+        }
+
+        /**
+         * '다음 문제' 버튼 클릭 리스너
+         */
+        nextBtn.addEventListener('click', () => {
+            currentQuestionIndex++;
+            displayQuestion();
+        });
+
+        /**
+         * 퀴즈 결과 화면 표시
+         */
+        function showResults() {
+            quizContent.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+
+            const total = uniqueQuestions.length;
+            const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+
+            document.getElementById('final-total').textContent = total;
+            document.getElementById('final-correct').textContent = score;
+            document.getElementById('final-score').textContent = percentage;
+        }
+
+    </script>
+</body>
+</html>
